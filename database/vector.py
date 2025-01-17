@@ -40,16 +40,16 @@ class VectorDB(DBManager):
         return int(hashlib.md5(query.encode()).hexdigest(), 16) % (10**8)
 
     def insert(
-        self, query: str, embedding: Tensor, response: str, metadata: Dict
+        self, key: str, embedding: Tensor, response: str, metadata: Dict
     ) -> None:
         """
         Insert data into the collections
         """
 
         point = PointStruct(
-            id=self.__get_id(query),
+            id=self.__get_id(key),
             vector=tensor(embedding).cpu().numpy().tolist(),
-            payload={"query": query, "response": response, "metadata": metadata},
+            payload={"query": key, "response": response, "metadata": metadata},
         )
 
         self.__client.upsert(collection_name=self.__name, points=[point])
@@ -60,9 +60,9 @@ class VectorDB(DBManager):
         """
 
         if search_result := self.__client.search(
+            limit=2,
             collection_name=self.__name,
             query_vector=tensor(embedding).tolist(),
-            limit=5,
         ):
             closest = search_result[0]
             results = [(item.id, item.version, item.score) for item in search_result]

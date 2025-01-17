@@ -12,7 +12,7 @@ class DBManager(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def insert(self, query: str, **kwargs: Dict[str, Any]) -> None:
+    def insert(self, key: str, **kwargs: Dict[str, Any]) -> None:
         raise NotImplementedError
 
     @abstractmethod

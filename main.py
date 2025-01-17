@@ -1,8 +1,9 @@
 import time
+from os import environ
 from typing import Any, Dict, Optional
 
 from cache import Cache
-from database import VectorDB
+from database import MediaStorage, VectorDB
 from models import Ollama
 from service import Interaction
 from utils import ImageProcessor, TextTransformer
@@ -17,15 +18,20 @@ class ChatInterface:
         self.__processor = ImageProcessor
 
         self.__transformer = TextTransformer()
-        self.__cache = Cache(db=self.__db, transformer=self.__transformer)
+        self.__media_storage = MediaStorage(storage_dir="./assets")
+        self.__cache = Cache(
+            vector_db=self.__db,
+            transformer=self.__transformer,
+            media_storage=self.__media_storage,
+        )
         self.__interaction = Interaction(cache=self.__cache, llm=Ollama())
 
-    def query(self, prompt: str) -> str:
+    def query(self, prompt: str, **kwargs: Dict) -> str:
         """
         Perform plain text based queries
         """
 
-        return self.__interaction.call(prompt)
+        return self.__interaction.call(prompt, **kwargs)
 
     def locate(self, text: str, path: str) -> Optional[Dict]:
         """
@@ -34,25 +40,31 @@ class ChatInterface:
 
         return self.__processor(path).get_location(text)
 
-    def perform_action(self, action: str, identifier: str, image_path: str) -> Any:
+    def new_action(self, action: str, identifier: str, image_path: str) -> Any:
         """
-        Perform action on image based on user prompt.
+        Returns new `action` to perform on the media (image) based on user prompt.
         """
 
         if action.lower() in {"click", "submit"}:
-            return self.__perform_submit(image_path, identifier)
+            return self.__submit_action(image_path, identifier)
         else:
             raise NotImplementedError(f"Action {action} is not implemented")
 
-    def __perform_submit(self, path: str, identifier: str) -> Dict:
+    def __submit_action(self, path: str, identifier: str) -> Dict:
         """ """
 
-        x, y, _, _, _ = self.locate(identifier, path)
-
-        return {"action": "intent", "coords": [x, y], "label": identifier}
+        metadata = self.locate(identifier, path)
+        return {
+            "action": "click",
+            "label": identifier,
+            "coords": [metadata["x"], metadata["y"]],
+        }
 
 
 if __name__ == "__main__":
+    # Env
+    environ["TOKENIZERS_PARALLELISM"] = "FALSE"
+
     app = ChatInterface()
 
     s1 = time.time()
@@ -65,8 +77,15 @@ if __name__ == "__main__":
     r2 = app.query(q2)
     print(f"Response for query `{q2}` is `{r2}` took {time.time() - s2}")
 
-    response = app.perform_action("click", "Search", "assets/image.png")
-    print(response)
+    file_path = "assets/image.png"
+    action = app.new_action("click", "Search", file_path)
 
-    # element = app.locate("Search", "image.png")
-    # print(element)
+    s3 = time.time()
+    q3 = f"Given action {action} and image path {file_path}. Write integration test code for this"
+    r3 = app.query(q3, file_path=file_path, action=action)
+    print(f"Response for query `{q3}` is `{r3}` took {time.time() - s3}")
+
+    s4 = time.time()
+    q4 = f"Given intent {action} and image {file_path}. write integration test for this"
+    r4 = app.query(q4, file_path=None, action=action)
+    print(f"Response for query `{q4}` is `{r4}` took {time.time() - s4}")

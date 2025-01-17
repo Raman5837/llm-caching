@@ -1,3 +1,5 @@
+from typing import Dict, Optional, Tuple
+
 from cache import Cache
 from models import BaseLLM
 
@@ -11,17 +13,18 @@ class Interaction:
         self.__llm: BaseLLM = llm
         self.__cache: Cache = cache
 
-    def call(self, query: str) -> str:
+    def call(self, query: str, **kwargs: Dict) -> Tuple[str, Optional[str]]:
         """
         Interact With LLM
         """
 
-        if cached := self.__cache.get(query):
+        cached, media_files = self.__cache.get(query, **kwargs)
+        if cached:
             print(f"[CacheHit]: {query}")
-            return cached
+            return cached, media_files
 
         print(f"[CacheMiss]: {query}")
         response = self.__llm.execute(query)
-        self.__cache.set(query, response)
+        self.__cache.set(query, response, **kwargs)
 
-        return response
+        return response, None
