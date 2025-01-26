@@ -89,19 +89,34 @@ The LLM Caching System is a prototype designed to optimize the interaction with 
     Run `python -m pip install -r requirements.txt` to install the dependencies.
     Run `python main.py` to execute the code.
 
-## Configuration and Usage
+## **Configuration and Usage**
 
-**Moondream Configuration**
+### **Moondream Configuration**
 
-- Download the model file locally and provide its path in the configuration.
-- Use the `API_KEY` to access the model via the Moondream API
+1. **Option 1: Download the Model File**
 
-**Ollama Configuration**
+   - Visit [Moondream](https://docs.moondream.ai/quick-start) to Download the required model file
+   - Set the absolute file path to the model as an environment variable
 
-- Ensure that the Ollama service is running locally on your machine.
-- The system will automatically connect to the local instance; no additional setup is required.
+2. **Option 2: Use the API Key**
+   - Sign up for an account on [Moondream API](https://console.moondream.ai/)
+   - Generate an API key from your account's developer section.
+   - Set the API key as an environment variable
 
-**Clip Configuration**
+### **Ollama Configuration**
 
-- Clip requires no additional configuration.
-- Simply ensure all dependencies are installed from `requirements.txt`
+1. **Download Ollama**:
+
+   - Visit [Ollama Official Website](https://ollama.ai/) to download the application for your platform.
+   - Install Ollama on your machine.
+
+2. **Run Ollama Locally**:
+   - After installation, start the Ollama service on your machine by running:
+     ```bash
+     ollama serve
+     ```
+
+### **CLIP Configuration**
+
+- No additional setup is required for CLIP.
+- Ensure all dependencies are installed by running
