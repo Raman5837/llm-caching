@@ -1,6 +1,7 @@
 from typing import Union
 
+from utils.box import BoxUtility
 from utils.image import ImageProcessor
-from utils.transformer import TextTransformer
+from utils.text import TextProcessor
 
-Utility = Union[TextTransformer, ImageProcessor]
+Utility = Union[BoxUtility, TextProcessor, ImageProcessor]

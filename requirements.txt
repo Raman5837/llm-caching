@@ -1,9 +1,17 @@
+nltk==3.9.1
 torch==2.5.1
+numpy==2.2.2
 ollama==0.4.6
 pydantic==2.10.5
+moondream==0.0.6
+safetensors==0.5.2
+tokenizers==0.20.3
 pytesseract==0.3.13
 torchvision==0.20.1
+python-dotenv==1.0.1
+transformers==4.45.0
 qdrant-client==1.12.2
 faiss-cpu==1.9.0.post1
 opencv-python==4.10.0.84
 sentence-transformers==3.3.1
+git+https://github.com/openai/CLIP.git

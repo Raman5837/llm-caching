@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any
+from typing import Any, Dict
 
 
 class BaseLLM(metaclass=ABCMeta):
@@ -8,5 +8,5 @@ class BaseLLM(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def execute(self, prompt: str) -> Any:
+    def execute(self, prompt: str, **kwargs: Dict[str, Any]) -> Any:
         raise NotImplementedError

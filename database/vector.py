@@ -19,14 +19,16 @@ class VectorDB(DBManager):
         self.__name: str = name
         self.__client = QdrantClient(":memory:")
 
-    def create(self) -> None:
+        self.create(name=self.__name)
+
+    def create(self, name: str) -> None:
         """
-        Creates A New Collection
+        Creates a new collection
         """
 
-        if not self.__client.collection_exists(self.__name):
+        if not self.__client.collection_exists(name):
             self.__client.create_collection(
-                collection_name=self.__name,
+                collection_name=name,
                 vectors_config=VectorParams(
                     size=INDEX_DIMENSION, distance=Distance.COSINE
                 ),
@@ -54,7 +56,7 @@ class VectorDB(DBManager):
 
         self.__client.upsert(collection_name=self.__name, points=[point])
 
-    def search(self, embedding: Tensor, threshold: float = 0.8) -> Optional[str]:
+    def search(self, embedding: Tensor, threshold: float = 0.6) -> Optional[str]:
         """
         Search response for given `query`
         """

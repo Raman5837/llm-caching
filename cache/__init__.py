@@ -2,7 +2,7 @@ import time
 from typing import Dict, Optional, Tuple
 
 from database import DBManager, MediaStorage
-from utils import TextTransformer
+from utils import TextProcessor
 
 
 class Cache:
@@ -14,14 +14,14 @@ class Cache:
         self,
         vector_db: DBManager,
         media_storage: MediaStorage,
-        transformer: TextTransformer,
+        text_processor: TextProcessor,
         ttl_in_seconds: float = 3600,
     ) -> None:
         self.__db: DBManager = vector_db
         self.__media_storage = media_storage
 
         self.__ttl: float = ttl_in_seconds
-        self.__transformer: TextTransformer = transformer
+        self.__text_processor: TextProcessor = text_processor
 
     def __generate_key(self, key: str, media_hash: Optional[str] = None) -> str:
         """
@@ -48,14 +48,15 @@ class Cache:
 
         # Handle media file upload if provided
         saved_path = self.__upload_media(**kwargs)
-        media_hash = self.__media_storage.get_hash(saved_path) if saved_path else None
+        # media_hash = self.__media_storage.get_hash(saved_path) if saved_path else None
 
         timestamp: float = time.time()
-        embedding = self.__transformer.embedding(key)
-        new_key: str = self.__generate_key(key, media_hash)
+        embedding = self.__text_processor.embedding(key)
+        # new_key: str = self.__generate_key(key, media_hash)
+        # print(f"[VectorDB]: {new_key=}")
 
         self.__db.insert(
-            key=new_key,
+            key=key,
             response=value,
             embedding=embedding,
             metadata={
@@ -70,7 +71,7 @@ class Cache:
         Retrieves the cached response for a given query.
         """
 
-        embedding = self.__transformer.embedding(key)
+        embedding = self.__text_processor.embedding(key)
 
         if cached := self.__db.search(embedding=embedding):
             current_time: float = time.time()

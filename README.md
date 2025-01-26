@@ -2,97 +2,106 @@
 
 ## Overview
 
-This project implements a caching mechanism prototype for LLMs responses.
-It optimizes response times and reduces redundant calls by caching query-response pairs along with any associated media files.
-The design supports scalability and modularity, enabling easy extensions for future enhancements.
-
-## Key Features
-
-1. **Transformer Integration**
-
-   - Uses `SentenceTransformer` to convert textual queries into dense vector embeddings.
-
-2. **VectorDB Integration**
-
-   - Uses a vector database (Qdrant) to store embeddings of user queries.
-   - Efficiently retrieves cached responses for similar queries using cosine similarity.
-   - Ensures response accuracy by incorporating a similarity threshold during searches.
-
-3. **Media Storage**
-
-   - Manages the storage and retrieval of media files (e.g., images) uploaded with user queries.
-   - Currently, files are stored in a local directory on disk.
-   - Designed to support extensions for cloud-based storage solutions like Amazon S3, Google Cloud Storage, or other bucket services.
-
-4. **Cache Layer**
-   - Provides a unified interface for interacting with the VectorDB and Media Storage.
-   - Stores query-response pairs and associates media files (if provided) using metadata.
-   - Handles expiration of cached entries based on a configurable TTL (Time-to-Live).
+The LLM Caching System is a prototype designed to optimize the interaction with Large Language Models (LLMs) by implementing an efficient caching mechanism. It reduces redundant LLM calls, optimizes response times, and provides a scalable and modular structure for future enhancements. The system supports both text-based and image-based queries, leveraging vector databases and multiple LLMs in a layered architecture.
 
 ## Design Architecture
 
-```
-+--------------------+      +-----------------------+      +---------------------+
-|   ChatInterface    |----->|   InteractionLayer    |----->|      CacheLayer     |
-| (Client Interface) |      |       (For LLM)       |      |  (Text Transformer) |
-|                    |      |                       |      |                     |
-|                    |      |                       |      |                     |
-+--------------------+      +-----------------------+      +---------------------+
-         |                                                           |
-         |                                                           |
-+---------------------+                                    +---------------------+
-|  ImageProcessor     |                                    |      Vector DB      |
-| (Handles OCR for    |                                    | (Query, Embedding,  |
-|    Images)          |                                    |  Metadata, Cosine)  |
-+---------------------+                                    +---------------------+
-                                                               |
-                                                               |
-                                       +-----------------------+----------------------+
-                                       |                                              |
-                                       |                                              |
-                           +---------------------+                          +----------------------+
-                           |     Media Storage   |                          |  Local File System   |
-                           | (Handles Media Files|                          | (Stores Media Files) |
-                           |   for Queries)      |                          |                      |
-                           +---------------------+                          +----------------------+
+```plaintext
++--------------------+
+|   ChatInterface    |  <--- Main Abstraction Layer
+| (Client Interface) |  Handles user queries and routes them to Interaction Layer
++--------------------+
+          |
++-----------------------+
+|   Interaction Layer   |  <--- Core Service Layer
+|  (Orchestrates Logic) |  Manages LLMs, caching, processors, and utilities
++-----------------------+
+          |
++----------------------+----------------------+----------------------+-----------------------+
+|    ModelManager      |      Cache Layer     |      MediaStorage     |      BoxUtility      |
+|   (Manages LLMs)     |  (Uses VectorDB for  | (Manages media files) |  (Bounding box ops)  |
+|                      |  embeddings & cache) |                       |                      |
++----------------------+----------------------+-----------------------+-----------------------+
+          |                                |                                        |
++-------------------+          +-----------------------+                    +-----------------------+
+|    LLM Models     |          |     VectorDB         |                     |    ImageProcessor     |
+| (Clip, MoonDream, |          |  (Embeddings &       |                     | (OCR, overlays, etc.) |
+|  Ollama, etc.)    |          |   metadata store)    |                     +-----------------------+
++-------------------+          +-----------------------+
+          |
++-----------------------+
+|    TextProcessor      |  <--- Performs text embeddings, parses user prompts
++-----------------------+
+
 
 ```
 
-## Components
+---
 
-1. **Cache Layer**
+## **Features**
 
-   - Acts as the central interface for caching and retrieving responses.
-   - Combines query embeddings and media file metadata to store or retrieve cached entries.
-   - Automatically deletes expired entries based on the TTL configuration.
+1. **LLM Integration**
 
-2. **VectorDB**
+   - Supports multiple LLMs (`MoonDream`, `Ollama`, and `Clip`) that can work sequentially or independently based on the request.
+   - Allows dynamic selection of models for specific use cases, such as object detection or natural language understanding.
+   - Ensures modularity by abstracting LLM calls in the `InteractionLayer`.
 
-   - Handles storage of query embeddings and metadata.
-   - Efficient similarity-based searches for cached responses.
-   - Uses Qdrant as the vector database with cosine distance for similarity.
+2. **Text Embedding and Semantic Search**
 
-3. **Media Storage**
+   - Leverages `SentenceTransformer` for transforming textual queries into dense vector embeddings.
+   - Uses embeddings for semantic similarity search, ensuring that similar queries retrieve cached responses.
+   - Dynamically extracts identifiers (e.g., objects like "coconut", "flowers", "ice-cream", "man") from user prompts.
 
-   - Handles uploading, retrieving, and deleting media files associated with queries.
-   - Currently stores files in a local directory.
-   - Extendable to support cloud providers like Amazon S3 or Google Cloud Storage.
+3. **Vector Database Integration**
 
-4. **Image Processor (OCR)**
+   - Uses `Qdrant` as the vector database for storing and querying embeddings with cosine similarity.
+   - Handles metadata storage for each query, such as file paths and response data.
+   - Implements a configurable similarity threshold to ensure response accuracy.
 
-   - Analyzes image content using OCR to extract relevant text and coordinates of specific elements (like buttons, fields).
-   - Uses labels or identifiers in the image (e.g., a button labeled "Submit") to pinpoint exact coordinates or regions.
-   - These coordinates are then used to map and trigger corresponding actions in the InteractionLayer.
+4. **Media File Handling**
 
-5. **Text Transformer (Sentence Transformer)**
+   - Manages storage and retrieval of media files (e.g., images) associated with user queries.
+   - Currently utilizes a local file system but is extendable to cloud storage providers like Amazon S3, Google Cloud Storage, or Azure Blob Storage.
 
-   - Converts textual content (queries or extracted OCR text) into vector representations.
-   - Uses Sentence Transformers to create embeddings that capture semantic meaning.
-   - Embeddings are stored in the VectorDB for similarity-based search and retrieval.
+5. **Cache Layer**
+
+   - Combines embeddings and metadata for efficient caching of query-response pairs.
+   - Automatically handles cache expiration using a Time-to-Live (TTL) configuration.
+   - Avoids redundant LLM calls by leveraging the cached embeddings for similarity-based retrieval.
+
+6. **Image Processing (OCR)**
+
+   - Processes images to extract relevant text and coordinates using OCR.
+   - Maps extracted elements (e.g., buttons, fields) to actionable regions based on identifiers.
+   - Draws bounding boxes or overlays on images to visually represent detected elements.
+
+7. **Scalable Architecture**
+   - Designed to support additional LLMs or features with minimal changes to the codebase.
+   - Modular and extensible, allowing the addition of new storage backends, caching mechanisms, or processing layers.
+
+---
 
 ## Installation
 
-    Clone the repository
+    git clone git@github.com:Raman5837/llm-caching.git
     cd llm-caching
+
     Run `python -m pip install -r requirements.txt` to install the dependencies.
     Run `python main.py` to execute the code.
+
+## Configuration and Usage
+
+**Moondream Configuration**
+
+- Download the model file locally and provide its path in the configuration.
+- Use the `API_KEY` to access the model via the Moondream API
+
+**Ollama Configuration**
+
+- Ensure that the Ollama service is running locally on your machine.
+- The system will automatically connect to the local instance; no additional setup is required.
+
+**Clip Configuration**
+
+- Clip requires no additional configuration.
+- Simply ensure all dependencies are installed from `requirements.txt`
